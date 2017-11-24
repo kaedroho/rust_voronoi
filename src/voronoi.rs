@@ -1,4 +1,5 @@
 use point::Point;
+use rect::Rect;
 use dcel::{DCEL, Vertex, add_line, add_faces};
 use beachline::*;
 use event::*;
@@ -8,7 +9,7 @@ type TripleSite = (Point, Point, Point);
 
 /// Computes the Voronoi diagram of a set of points.
 /// Returns a Doubly Connected Edge List.
-pub fn voronoi(points: Vec<Point>, boxsize: f64) -> DCEL {
+pub fn voronoi(points: Vec<Point>, bounding_rect: Rect) -> DCEL {
     trace!("Starting Voronoi Computation");
     let mut event_queue = EventQueue::new();
     let mut beachline = BeachLine::new();
@@ -32,7 +33,7 @@ pub fn voronoi(points: Vec<Point>, boxsize: f64) -> DCEL {
             }
         }
     }
-    add_bounding_box(boxsize, &beachline, &mut result);
+    add_bounding_rect(bounding_rect, &beachline, &mut result);
     add_faces(&mut result);
     return result;
 }
@@ -259,14 +260,10 @@ fn handle_circle_event(
     }
 }
 
-fn outside_bb(pt: Point, box_size: f64) -> bool {
-    let delta = 0.1;
-    pt.x() < 0. - delta || pt.x() > box_size + delta || pt.y() < 0. - delta || pt.y() > box_size + delta
-}
-
-fn add_bounding_box(boxsize: f64, beachline: &BeachLine, dcel: &mut DCEL) {
+fn add_bounding_rect(bounding_rect: Rect, beachline: &BeachLine, dcel: &mut DCEL) {
     extend_edges(beachline, dcel);
 
+    // ???????????
     let delta = 50.;
     let bb_top =    [Point::new(0. - delta, 0.),         Point::new(boxsize + delta, 0.)];
     let bb_bottom = [Point::new(0. - delta, boxsize),    Point::new(boxsize + delta, boxsize)];
@@ -282,11 +279,10 @@ fn add_bounding_box(boxsize: f64, beachline: &BeachLine, dcel: &mut DCEL) {
 
     for vert in 0..dcel.vertices.len() {
         let this_pt = dcel.vertices[vert].coordinates;
-        if outside_bb(this_pt, boxsize) {
+        if !bounding_rect.contains_point(this_pt) {
             dcel.remove_vertex(vert);
         }
     }
-
 }
 
 // This just extends the edges past the end of the bounding box
