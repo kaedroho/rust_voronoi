@@ -16,6 +16,6 @@ pub fn polygon_centroid(pts: &Vec<Point>) -> Point {
 /// Each point is moved to the centroid of its Voronoi cell.
 pub fn lloyd_relaxation(pts: Vec<Point>, box_size: f64) -> Vec<Point> {
     let voronoi = voronoi(pts, box_size);
-    let faces = make_polygons(&voronoi);
+    let faces = make_polygons(&voronoi.dcel);
     faces.iter().map(polygon_centroid).collect::<Vec<Point>>()
 }

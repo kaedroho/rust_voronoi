@@ -18,10 +18,12 @@ mod point;
 mod dcel;
 mod beachline;
 mod event;
+mod diagram;
 mod voronoi;
 mod lloyd;
 
 pub use voronoi::voronoi;
 pub use point::Point;
 pub use dcel::{DCEL, make_line_segments, make_polygons};
+pub use diagram::VoronoiDiagram;
 pub use lloyd::{lloyd_relaxation, polygon_centroid};

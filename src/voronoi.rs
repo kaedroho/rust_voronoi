@@ -3,19 +3,20 @@ use dcel::{DCEL, Vertex, add_line, add_faces};
 use beachline::*;
 use event::*;
 use geometry::*;
+use diagram::VoronoiDiagram;
 
 type TripleSite = (Point, Point, Point);
 
 /// Computes the Voronoi diagram of a set of points.
 /// Returns a Doubly Connected Edge List.
-pub fn voronoi(points: Vec<Point>, boxsize: f64) -> DCEL {
+pub fn voronoi(points: Vec<Point>, boxsize: f64) -> VoronoiDiagram {
     trace!("Starting Voronoi Computation");
     let mut event_queue = EventQueue::new();
     let mut beachline = BeachLine::new();
     for pt in points {
         event_queue.push(Event::Site { 0: pt });
     }
-    let mut result = DCEL::new();
+    let mut dcel = DCEL::new();
 
     while let Some(this_event) = event_queue.pop() {
         trace!("\n\n");
@@ -25,16 +26,17 @@ pub fn voronoi(points: Vec<Point>, boxsize: f64) -> DCEL {
 
         match this_event {
             Event::Site(pt) => {
-                handle_site_event(pt, &mut event_queue,  &mut beachline, &mut result);
+                handle_site_event(pt, &mut event_queue,  &mut beachline, &mut dcel);
             }
             Event::Circle(center, _, leaf, _) => {
-                handle_circle_event(leaf, center, &mut event_queue, &mut beachline, &mut result);
+                handle_circle_event(leaf, center, &mut event_queue, &mut beachline, &mut dcel);
             }
         }
     }
-    add_bounding_box(boxsize, &beachline, &mut result);
-    add_faces(&mut result);
-    return result;
+    add_bounding_box(boxsize, &beachline, &mut dcel);
+    add_faces(&mut dcel);
+
+    VoronoiDiagram::from_dcel(dcel)
 }
 
 fn handle_site_event(site: Point, queue: &mut EventQueue, beachline: &mut BeachLine, result: &mut DCEL) {
@@ -328,7 +330,7 @@ mod tests {
     fn readme_example() {
         let vor_pts = vec![Point::new(0.0, 1.0), Point::new(2.0, 3.0), Point::new(10.0, 12.0)];
         let vor_diagram = voronoi(vor_pts, 800.);
-        let vor_polys = make_polygons(&vor_diagram);
+        let vor_polys = make_polygons(&vor_diagram.dcel);
         assert_eq!(vor_polys.len(), 3);
     }
 
@@ -338,7 +340,7 @@ mod tests {
         let vor_pts = vec![Point::new(10.0, 1.0), Point::new(20.0, 1.0), Point::new(30.0, 1.0)];
         let num_pts = vor_pts.len();
         let vor_diagram = voronoi(vor_pts, 800.);
-        let vor_polys = make_polygons(&vor_diagram);
+        let vor_polys = make_polygons(&vor_diagram.dcel);
         assert_eq!(vor_polys.len(), num_pts);
     }
 
@@ -347,7 +349,7 @@ mod tests {
         let vor_pts = vec![Point::new(1.0, 10.0), Point::new(1.0, 20.0), Point::new(1.0, 30.0), Point::new(1.0, 40.0)];
         let num_pts = vor_pts.len();
         let vor_diagram = voronoi(vor_pts, 800.);
-        let vor_polys = make_polygons(&vor_diagram);
+        let vor_polys = make_polygons(&vor_diagram.dcel);
         assert_eq!(vor_polys.len(), num_pts);
     }
 }
